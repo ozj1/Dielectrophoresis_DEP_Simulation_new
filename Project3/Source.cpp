@@ -1,4 +1,5 @@
 //Monte Carlo code for DEP posts work
+//in here we don't use sei integration method to calculte sphere plate electro energy, we use the equation provided in Bevan's paper
 //In here we account for coordination transform as comsol simulation cannot handle more than 2 cylinder posts 
 //this code has been adjusted for comsol slice data  
 #include <cstdlib>
@@ -17,16 +18,32 @@
 using namespace std;
 #include <algorithm>    // std::min_element, std::max_element
 
-
+//intialization
 #define pi 3.141592653589793
-double eps0 = 8.854187817e-12, kT = 4.0453001636e-21, em = 78.5 * eps0, ep = 2.6 * eps0, Di = 1;//Di is in um unit here
+double eps0 = 8.854187817e-12, kT = 4.0453001636e-21, em = 78.5 * eps0, ep = 3.8 * eps0, Di = 1;//Di is in um unit here
 double Vpp = 40, dg = 8e-6; //for N,m,j,kg,s units, Ro density kg/m3, for N, m, j, kg, s, C units, eps0= 8.85e-12 C2/Nm2
 double CMf = (ep - em) / (ep + 2 * em);
 double acceptedtrials = 0., totaltrials = 0., acceptancerate;
 int jmax = 200000000;
 double rad, A, B, MetropolisMC, kBoltzmann = 1.38064852e-23, Temp = 293.;
+double Diameter_post = 20., post_distance = 30.; //diameter of each post, tilted distance between posts  
+double dist_posts_offset = 0, X_cyl1_offset = 18, Y_cyl1_offset = 18;
+double number_of_slides_in_comsol_output = 30;
 
+double post_H = 4, pH = 9.43, R = Di * (1.0e-6) / 2., eps = 78.5, e0 = 1.60217657e-19, Na = 6.022e+23, zetasphere = -43.88, zetapost = -23.88;
+double A1w2, Asio2 = 6.6e-20, Aw = 3.7e-20;
+
+int const Particle_num = 2500;
+double paticles_cut_off_distance = 15.;
+
+string input = "30zSlices-albanie-2post-1MHz-z=30-v=5-normal-results-mesh0.6-0.8.txt"; //input file name
+string output = "out sio2 2500 particles di 20 dist 30 v5 1MHz.txt";//output file name
+bool plot_dep_enrgy = false;//which type output we want
+bool Xvalues = false, Yvalues = false, Zvalues = false, DEPvalues = true;
+double Zd_cross = 6;
 //const int numvalue = 565820;//as we know our data has this much row in it 565820
+
+
 struct triple {
 
 	vector<double> xvalue;
@@ -41,7 +58,7 @@ triple getdata() {
 	double in = 0.0;
 
 	ifstream infile;
-	infile.open("30zSlices-albanie-2post-1MHz-z=30-v=5-normal-results-mesh0.6-0.8.txt");//remember to save a text file in exact location that "out" file exist  
+	infile.open(input);//remember to save a text file in exact location that "out" file exist  
 	while (infile >> in) {
 		values.push_back(in);
 	}
@@ -121,11 +138,12 @@ public:// for error
 
 	xy coordinate_transform(double Wcell_input, double Wcell_large, double x, double y)
 	{
-		double Di = 20., d = 30.; //diameter of each post, tilted distance between posts  
+
+		double Di_p = Diameter_post, d = post_distance; //diameter of each post, tilted distance between posts  
 		//vrtical or horizental distance between two posts
-		double dist_posts = (Di + d) / pow(2, 0.5);
+		double dist_posts = dist_posts_offset + (Di_p + d) / pow(2, 0.5);
 		//X_cyl1 is th x coordinate of the bottom and left post in the raw data, same for Y_cyl1
-		double X_cyl1 = 18 + Wcell_input / 2. - dist_posts, Y_cyl1 = 18 + Wcell_input / 2. - dist_posts;
+		double X_cyl1 = X_cyl1_offset + Wcell_input / 2. - dist_posts, Y_cyl1 = Y_cyl1_offset + Wcell_input / 2. - dist_posts;
 
 		//y is y in our large map, y_raw is what we have from data text file 
 		//cell 1, 2,3,4
@@ -229,7 +247,7 @@ public:// for error
 		//in here we relate the value of Xd and Yd to our data coordinate
 		Xd = coordinate_transform(data_lx, d_lx, Xd, Yd).x;
 		Yd = coordinate_transform(data_lx, d_lx, Xd, Yd).y;
-		
+
 		//th=threshold
 		double xdd, Xdd, xdd_, Xdd_, ydd, Ydd, ydd_, Ydd_, zdd, Zdd_;//Xd=Xdesird, Yd=Ydesired, Zd=Zdesired
 		int mm = 0; double Ed = 0.0;//Ed=Ederivd
@@ -238,21 +256,22 @@ public:// for error
 		xdd = Xd - th, Xdd = Xd, xdd_ = Xd, Xdd_ = Xd + th; //Ydd = Yd - th, Ydd_ = Yd + th; Zdd = Zd - 2., Zdd_ = Zd + 2.;
 		ydd = Yd - th, Ydd = Yd, ydd_ = Yd, Ydd_ = Yd + th;
 		zdd = -0.0001, Zdd_ = Zd + 0.0001;//some points have values only for z=0 or lz=8, so we need to cover all the range from 0 to lz
-		
+
 		if (xdd < 0.) { xdd = xdd + data_lx, Xdd = data_lx + 0.0001, xdd_ = -0.0001; } if (ydd < 0.) { ydd = ydd + data_ly, Ydd = data_ly + 0.0001, ydd_ = -0.0001; }// if (zdd < 0.) { zdd = -0.0001; };
 		if (Xdd_ > data_lx) { xdd_ = -0.0001, Xdd = data_lx + 0.0001, Xdd_ = Xdd_ - data_lx; } if (Ydd_ > data_ly) { ydd_ = -0.0001, Ydd = data_ly + 0.0001, Ydd_ = Ydd_ - data_ly; }// if (Zdd_ > lz) { Zdd_ = lz + 0.0001; };
-		
+
 		double A1 = 100, A2 = 100, A3 = 100;//A1 and A2 are the colsest and the second closest distance from the point (Xd, Yd, Zd), n1 and n2 are the index of these points
-		
+
 		int n1 = 1, n2 = 2, n3 = 3;
 		imax = DataNum, imin = 0;
 
 		//here I have made the code compatable for the comsol slice data
-		double number_of_slides = 30;
+
+		double number_of_slides = number_of_slides_in_comsol_output;
 		double slide_space = round(DataNum / number_of_slides);
 		//Zd = 30;
-		double gh=round(Zd);
-		if (gh== round(5)) {
+		double gh = round(Zd);
+		if (gh == round(5)) {
 			gh = round(6);
 		}
 		//int DataSection2 = int(slide_space / data_lx);//140062/70.71=1981  |3781=567224/150, 565806 are the total # of data and we know x coordinate is sorted, by doing this we can make the code faster
@@ -270,12 +289,12 @@ public:// for error
 		//double bbb00 = X.at(4 * slide_space);
 
 		if ((Zd - th) > 0 && (Zd + th) < (data_lz)) {
-			imin = (gh - th+1) * slide_space, imax = (gh + th-2) * slide_space;//140062/70.71=1981  |3781=567224/150, 565806 are the total # of data and we know x coordinate is sorted, by doing this we can make the code faster
+			imin = (gh - th + 1) * slide_space, imax = (gh + th - 2) * slide_space;//140062/70.71=1981  |3781=567224/150, 565806 are the total # of data and we know x coordinate is sorted, by doing this we can make the code faster
 		}
-		else if (Zd <= th ) {
+		else if (Zd <= th) {
 			imax = (gh + th - 2) * slide_space;
 		}
-		else if (Zd >= (data_lz-th)) {
+		else if (Zd >= (data_lz - th)) {
 			imin = (gh - th + 1) * slide_space;
 		}
 		//double bbb00 = Z.at(imin);
@@ -285,38 +304,38 @@ public:// for error
 
 			//if ((round(Z.at(i)) == gh) ) {
 
-				if ((X.at(i) >= xdd && X.at(i) <= Xdd) || (X.at(i) >= xdd_ && X.at(i) <= Xdd_))
+			if ((X.at(i) >= xdd && X.at(i) <= Xdd) || (X.at(i) >= xdd_ && X.at(i) <= Xdd_))
 
 
+			{
+
+				if ((Y.at(i) >= ydd && Y.at(i) <= Ydd) || (Y.at(i) >= ydd_ && Y.at(i) <= Ydd_))
 				{
 
-					if ((Y.at(i) >= ydd && Y.at(i) <= Ydd) || (Y.at(i) >= ydd_ && Y.at(i) <= Ydd_))
-					{
 
+					//if (Z.at(i) > z0 && Z.at(i) <= (data_lz + 0.001))
+					//{
+					mm++;
 
-						//if (Z.at(i) > z0 && Z.at(i) <= (data_lz + 0.001))
-						//{
-						mm++;
-
-						if (mm == 1) { A1 = calcDistance(Xd, X.at(i), Yd, Y.at(i), Zd, Z.at(i), data_lx, data_ly), n1 = i; }
-						if (mm == 2) {
-							A2 = calcDistance(Xd, X.at(i), Yd, Y.at(i), Zd, Z.at(i), data_lx, data_ly), n2 = i;;
-							if (A2 < A1) { A3 = A1, A1 = A2, A2 = A3, n3 = n1, n1 = n2, n2 = n3; }//now we know for sur that A1<A2
-						}
-						if (mm > 2) { //here we want to updat A1 and A2 to mak sure we'v got the closest points
-							A3 = calcDistance(Xd, X.at(i), Yd, Y.at(i), Zd, Z.at(i), data_lx, data_ly), n3 = i;
-
-							if (A3 < A1) { A2 = A1, A1 = A3, n2 = n1, n1 = n3; }
-							else if ((A3 < A2) && (A3 >= A1)) { A2 = A3, n2 = n3; }
-						}
-
-						//}
+					if (mm == 1) { A1 = calcDistance(Xd, X.at(i), Yd, Y.at(i), Zd, Z.at(i), data_lx, data_ly), n1 = i; }
+					if (mm == 2) {
+						A2 = calcDistance(Xd, X.at(i), Yd, Y.at(i), Zd, Z.at(i), data_lx, data_ly), n2 = i;;
+						if (A2 < A1) { A3 = A1, A1 = A2, A2 = A3, n3 = n1, n1 = n2, n2 = n3; }//now we know for sur that A1<A2
 					}
+					if (mm > 2) { //here we want to updat A1 and A2 to mak sure we'v got the closest points
+						A3 = calcDistance(Xd, X.at(i), Yd, Y.at(i), Zd, Z.at(i), data_lx, data_ly), n3 = i;
+
+						if (A3 < A1) { A2 = A1, A1 = A3, n2 = n1, n1 = n3; }
+						else if ((A3 < A2) && (A3 >= A1)) { A2 = A3, n2 = n3; }
+					}
+
+					//}
 				}
+			}
 			//}
-			
+
 		}
-		
+
 		return Ed = (E.at(n1) + E.at(n2)) / 2.;
 
 
@@ -327,9 +346,10 @@ public:// for error
 
 
 };
-double post_H=4, pH = 9.43, R = Di * (1.0e-6) / 2., eps = 80.1, e0 = 1.60217657e-19,  Na = 6.022e+23;
 
-class mutual_interactions{
+
+
+class mutual_interactions {
 public:
 	double ys(double zeta)
 	{
@@ -347,11 +367,10 @@ public:
 	}
 	//electroestatic between rod-seg rod-seg
 	//double ESt_SR_SR(double r, double zeta1, double zeta2)
-    double ESt_SR_SR(double r)
+	double ESt_SR_SR(double r)
 	{
 		r = r * 1.0e-6;
-		double zeta1= -43.88, zeta2= -43.88;
-		double eps = 80.1, eps0 = 8.854187817e-12, e0 = 1.60217657e-19, kT = 4.0453001636e-21, R = Di * (1.0e-6) / 2.;
+		double zeta1 = zetasphere, zeta2 = zetasphere;
 		return eps * eps0*pow((kT / e0), 2.)* yy(r, zeta1)*yy(r, zeta2)*(pow(R, 2.) / r)*log(1 + exp(-kappa(pH) * (r - 2.*R)));//modified eq for wo sphrs with differnt zeta potntial (particle spheres and post spheres) 
 
 	}
@@ -364,25 +383,32 @@ public:
 	double EvdwSS(double r)
 	{//it includes all core shell, shell shell, core core interactions
 		r = r * 1.0e-6;
-		double A1w2, Asio2 = 6.6e-20, Aw = 3.7e-20;
 		double Asphere1, Asphere2;
-		Asphere1 = Asphere2 = Asio2;
+		Asphere1 = Asio2;
+		Asphere2 = Asio2;
 		A1w2 = (pow(Asphere1, 1. / 2) - pow(Aw, 1. / 2)) * (pow(Asphere2, 1. / 2) - pow(Aw, 1. / 2));
 		//no problem if R and ds are not in nm scale because x and y in Hr function are ratios
 		//encourted a strange problem don't write 1/12 will make zero in results, use 1./12 !!!!
 		return (-1. / 12)* (A1w2*Hr((r - 2.*R) / (2.*R), 1.));
 	}
-	
+	double EDL_S_FP_bevan(double h)//Electric double layer between Sphere and Flat Plate Equation
+	{
+		double zeta1 = zetasphere, zeta2 = zetapost;//for now we consider the post zeta as -23.88
+		double sai1 = tanh(ys(zeta1) / 4.);
+		double sai2 = tanh(ys(zeta2) / 4.);
+		return 64 * pi *R* eps*eps0*sai1*sai2*pow((kT / e0), 2.)*exp(-kappa(pH) * ((h - post_H)* (1.0e-6) - R));//eq from SEI paper: Bhattacharjee, Elimelech
+		//return r;
+	}
 	double EDL_S_FP(double h)//Electric double layer between Sphere and Flat Plate Equation
 	{
-		double zeta1 = -43.88, zeta2 = -23.88;//for now we consider the post zeta as -23.88
+		double zeta1 = zetasphere, zeta2 = zetapost;//for now we consider the post zeta as -23.88
 		double sai1 = tanh(ys(zeta1) / 4.);
 		double sai2 = tanh(ys(zeta2) / 4.);
 		return 32 * eps*eps0*kappa(pH)*sai1*sai2*pow((kT / e0), 2.)*exp(-kappa(pH) * (h));//eq from SEI paper: Bhattacharjee, Elimelech
 		//return r;
 	}
 	//a function to calculate integral numarically
-	double SEIntegralSumEq(double lowBound,double upBound, int n, double z)//Surface Element Integration Equation also the integral is calculated numarically 
+	double SEIntegralSumEq(double lowBound, double upBound, int n, double z)//Surface Element Integration Equation also the integral is calculated numarically 
 	{
 		//z = 4.01;
 		n = 1000;
@@ -395,15 +421,15 @@ public:
 			double r = lowBound + i * dr;
 			double h1 = H - R * pow((1 - pow((r / R), 2)), 0.5);
 			double h2 = H + R * pow((1 - pow((r / R), 2)), 0.5);
-			double funcValue = EDL_S_FP(h1)- EDL_S_FP(h2);
+			double funcValue = EDL_S_FP(h1) - EDL_S_FP(h2);
 			double rectangleArea = funcValue * r*dr;
 			cumSum += rectangleArea;
 
 		}
-		double yyy= 2 * pi*cumSum;
-		return 2*pi*cumSum;
+		double yyy = 2 * pi*cumSum;
+		return 2 * pi*cumSum;
 	}
-	
+
 };
 
 
@@ -420,11 +446,8 @@ int main() {
 	//creating an iterator for the vector
 	//vector<int>::iterator it;
 
-	bool plot_dep_enrgy = false;
-	bool Xvalues = false, Yvalues = false, Zvalues = false, DEPvalues = true;
-	double Zd_cross = 6;
 	//new point understood, if our data doesn't have enough resolution then we gt the same value of Ed for all Z values which can lead to inaccurate simulation results 
-	ofstream out("out.txt");
+	ofstream out(output);
 	//streambuf *coutbuf = std::cout.rdbuf();
 	cout.rdbuf(out.rdbuf());
 
@@ -454,11 +477,11 @@ int main() {
 	int DataSection = int(DataNum / data_lx);//140062/70.71=1981  |3781=567224/150, 565806 are the total # of data and we know x coordinate is sorted, by doing this we can make the code faster
 
 
-	double Diameter = 20;
-	double Distance = 30;
+	double Diameter = Diameter_post;
+	double Distance = post_distance;
 	double bb = (Diameter + Distance) / 1.414;
 	double d_lx = (Diameter + Distance) * 2 * pow(2, 0.5);//d_lx = dsired - lx meaning the large sim box;
-	double d_ly = d_lx, d_lz= data_lz;
+	double d_ly = d_lx, d_lz = data_lz;
 	for (int i = 0; i < DataNum; i++) {
 		X.push_back(xyz.xvalue[i]);
 		Y.push_back(xyz.yvalue[i]);
@@ -466,20 +489,21 @@ int main() {
 		E.push_back(xyz.Enorm[i]);
 	}
 
-	
-	double Xd=30, Yd = 30, Zd = 5, z0 = 0., th = 3.;//th=threshold, Xd=Xdesird, Yd=Ydesired, Zd=Zdesired
-	
+
+	double Xd = 30, Yd = 30, Zd = 5, z0 = 0., th = 3.;//th=threshold, Xd=Xdesird, Yd=Ydesired, Zd=Zdesired
+
 	double Ed = 0.0;//Ed=Ederivd
 	Ed = energy_extraction.Energy_Value_Extaction(DataNum, DataSection, th, Xd, Yd, Zd, X, Y, Z, E, data_lx, data_ly, data_lz, d_lx);
 
 
 
-	int const Pnum = 1500;
-	int k = 0, ke=0;
+
+	int const Pnum = Particle_num;
+	int k = 0, ke = 0;
 	double Px[Pnum][2], Py[Pnum][2], Pz[Pnum][2], PEnergy[Pnum][2], A, B, A1, A2, A3, A4, A5, A6;//Di is in 1um
 	int OverlapChance, ff = 0;
 	double G;
-	if (plot_dep_enrgy==false) {
+	if (plot_dep_enrgy == false) {
 		for (i = 0; i < Pnum; i++) {
 			Px[i][0] = (double)fRand(0., d_lx);
 			Py[i][0] = (double)fRand(0., d_ly);
@@ -521,7 +545,7 @@ int main() {
 					ke++;
 				}
 				A = calcDistance(Px[k][0], Px[ke][0], Py[k][0], Py[ke][0], Pz[k][0], Pz[ke][0], d_lx, d_ly);
-				B = 15;
+				B = paticles_cut_off_distance;
 				// new added: we need to add A > 340 because if there's a overlab the energy of system will increase to infinity						
 				if (A <= B) {
 					//G += EvdwSS(A) + ESt_SR_SR(A) + ESt_SR_ER(A) + ESt_ER_ER(A);
@@ -536,11 +560,11 @@ int main() {
 			A5 = calcDistance(Px[k][0], (d_lx / 2.) + bb, Py[k][0], (d_ly / 2.) + bb, Pz[k][0], Pz[k][0], d_lx, d_ly);
 			A6 = calcDistance(Px[k][0], 0, Py[k][0], 0, Pz[k][0], Pz[k][0], d_lx, d_ly);
 
-			//if ((A1<=Diameter/2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
-			//	G += mutual_interactions.SEIntegralSumEq(0, R, 500, Zd);
-			//}
+			if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
+				G += mutual_interactions.EDL_S_FP_bevan(Zd);
+			}
 
-			PEnergy[k][0] = Upfde(Ed)+G;
+			PEnergy[k][0] = Upfde(Ed) + G;
 		}
 
 		int j = 0;
@@ -638,13 +662,13 @@ int main() {
 						for (ke = 0; ke < Pnum; ke++) {
 							if (ke != randi) {
 								A = calcDistance(Px[randi][1], Px[ke][1], Py[randi][1], Py[ke][1], Pz[randi][1], Pz[ke][1], d_lx, d_ly);
-								B = 15;
+								B = paticles_cut_off_distance;
 								// new added: we need to add A > 340 because if there's a overlab the energy of system will increase to infinity						
 								if (A <= B) {
 									//G += EvdwSS(A) + ESt_SR_SR(A) + ESt_SR_ER(A) + ESt_ER_ER(A);
 									//G[i][1] += EvdwSS(A) + ESt_SR_SR(A);								
 									G += mutual_interactions.ESt_SR_SR(A) + mutual_interactions.EvdwSS(A);
-									
+
 								}
 							}
 						}
@@ -655,10 +679,11 @@ int main() {
 						A5 = calcDistance(Px[randi][1], (d_lx / 2.) + bb, Py[randi][1], (d_ly / 2.) + bb, Pz[randi][1], Pz[randi][1], d_lx, d_ly);
 						A6 = calcDistance(Px[randi][1], 0, Py[randi][1], 0, Pz[randi][1], Pz[randi][1], d_lx, d_ly);
 
-						//if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
-							//G= mutual_interactions.SEIntegralSumEq(0, R, 500, Zd);
-						//	G += mutual_interactions.SEIntegralSumEq(0, R, 500, Zd);
-						//}
+						if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
+							//double Gu= mutual_interactions.SEIntegralSumEq(0, R, 500, Zd);
+							//double Guu = mutual_interactions.EDL_S_FP_bevan(Zd);
+							G += mutual_interactions.EDL_S_FP_bevan(Zd);
+						}
 
 						PEnergy[randi][1] = Upfde(Ed) + G;
 
@@ -689,10 +714,10 @@ int main() {
 						{
 							acceptedtrials++;
 
-							if (Px[randi][0] == Px[randi][1] && Py[randi][0] == Py[randi][1] && Pz[randi][0] == Pz[randi][1] && radnum < (2. / 3)) {
+							//if (Px[randi][0] == Px[randi][1] && Py[randi][0] == Py[randi][1] && Pz[randi][0] == Pz[randi][1] && radnum < (2. / 3)) {
 
-								cout << "";
-							}
+							//	cout << "";
+							//}
 
 							Px[randi][0] = Px[randi][1];
 							Py[randi][0] = Py[randi][1];
@@ -705,10 +730,12 @@ int main() {
 							acceptancerate = acceptedtrials / totaltrials;
 							//cout << "\n\n " << "acceptance rate: " << acceptancerate << "\n\n";
 							int pr;
-							pr = fmod(j, (1000));
+							//to get monte carlo steps per each sphere
+							pr = fmod(j, (Pnum));
 							if (pr == 0) {
 								cout << "j=" << j << "\n\n";
 								for (i = 0; i < Pnum; i++) {
+									//each particle has a specific color 
 									cout << "{RGBColor[224, 255, 255], Opacity[0.8], Sphere[{" << Px[i][0] << ", " << Py[i][0] << ", " << Pz[i][0] << "}, " << (Di / 2.) << "]},";
 								}
 							}
@@ -740,7 +767,7 @@ int main() {
 		double deltay = 2.;
 		Zd = Zd_cross;//the cross of Z that we want to see the results in
 
-		if (Xvalues==true) {
+		if (Xvalues == true) {
 			for (i = 0; (i*deltax) <= d_lx; i++) {
 				for (j = 0; (j*deltay) <= d_ly; j++) {
 					cout << i * deltax << "\n";

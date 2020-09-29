@@ -392,14 +392,7 @@ public:// for error
 		}
 
 		return Ed = (E.at(n1) + E.at(n2)) / 2.;
-
-
 	}
-
-
-
-
-
 };
 
 
@@ -418,17 +411,16 @@ public:
 		double c = pow(10., -pH)* 1.e+3;
 		return sqrt((2.* pow(e0, 2.)*Na*c) / (eps* eps0* kT));
 	}
-	double yy(double r, double zetaau)
+	double yy(double r, double zeta)
 	{
-		return 4.*exp(0.5 *kappa(pH)* (r - 2.*R)) * atanh(exp(-1.*kappa(pH)*(r - 2.*R) / 2.)* tanh(ys(zetaau) / 4.));
+		return 4.*exp(0.5 *kappa(pH)* (r - 2.*R)) * atanh(exp(-1.*kappa(pH)*(r - 2.*R) / 2.)* tanh(ys(zeta) / 4.));
 
 	}
-	//electroestatic between rod-seg rod-seg
+	//electroestatic between sphere sphere from NW assembly paper
 	//double ESt_SR_SR(double r, double zeta1, double zeta2)
-	double ESt_SR_SR(double r)
+	double ESt_SR_SR(double r, double zeta1, double zeta2)//zeta1 is the zeta of particle 1
 	{
 		r = r * 1.0e-6;
-		double zeta1 = zetasphere, zeta2 = zetasphere;
 		return eps * eps0*pow((kT / e0), 2.)* yy(r, zeta1)*yy(r, zeta2)*(pow(R, 2.) / r)*log(1 + exp(-kappa(pH) * (r - 2.*R)));//modified eq for wo sphrs with differnt zeta potntial (particle spheres and post spheres) 
 
 	}
@@ -438,35 +430,32 @@ public:
 		return y / (pow(x, 2.) + x * y + x) + y / (pow(x, 2.) + x * y + x + y) + 2.*log((pow(x, 2.) + x * y + x) / (pow(x, 2.) + x * y + x + y));
 	}
 	//double EvdwSS(double r, double Asphere1, double Asphere2)
-	double EvdwSS(double r)
-	{//it includes all core shell, shell shell, core core interactions
+	double EvdwSS(double r, double Asphere1, double Asphere2)
+	{//Asphere1 is the first particle type hamaker constant
 		r = r * 1.0e-6;
-		double Asphere1, Asphere2;
-		Asphere1 = Asio2;
-		Asphere2 = Asio2;
 		A1w2 = (pow(Asphere1, 1. / 2) - pow(Aw, 1. / 2)) * (pow(Asphere2, 1. / 2) - pow(Aw, 1. / 2));
 		//no problem if R and ds are not in nm scale because x and y in Hr function are ratios
 		//encourted a strange problem don't write 1/12 will make zero in results, use 1./12 !!!!
 		return (-1. / 12)* (A1w2*Hr((r - 2.*R) / (2.*R), 1.));
 	}
-	double EDL_S_FP_bevan(double h)//Electric double layer between Sphere and Flat Plate Equation
+	double EDL_S_FP_bevan(double h, double zetasphere)//Electric double layer between Sphere and Flat Plate Equation
 	{
-		double zeta1 = zetasphere, zeta2 = zetapost;//for now we consider the post zeta as -23.88
-		double sai1 = tanh(ys(zeta1) / 4.);
-		double sai2 = tanh(ys(zeta2) / 4.);
+		//for now we consider the post zeta as -23.88
+		double sai1 = tanh(ys(zetasphere) / 4.);
+		double sai2 = tanh(ys(zetapost) / 4.);
 		return 64 * pi *R* eps*eps0*sai1*sai2*pow((kT / e0), 2.)*exp(-kappa(pH) * ((h - post_H)* (1.0e-6) - R));//eq from SEI paper: Bhattacharjee, Elimelech
 		//return r;
 	}
-	double EDL_S_FP(double h)//Electric double layer between Sphere and Flat Plate Equation
+	double EDL_S_FP(double h, double zetasphere)//Electric double layer between Sphere and Flat Plate Equation
 	{
-		double zeta1 = zetasphere, zeta2 = zetapost;//for now we consider the post zeta as -23.88
-		double sai1 = tanh(ys(zeta1) / 4.);
-		double sai2 = tanh(ys(zeta2) / 4.);
+		//for now we consider the post zeta as -23.88
+		double sai1 = tanh(ys(zetasphere) / 4.);
+		double sai2 = tanh(ys(zetapost) / 4.);
 		return 32 * eps*eps0*kappa(pH)*sai1*sai2*pow((kT / e0), 2.)*exp(-kappa(pH) * (h));//eq from SEI paper: Bhattacharjee, Elimelech
 		//return r;
 	}
 	//a function to calculate integral numarically
-	double SEIntegralSumEq(double lowBound, double upBound, int n, double z)//Surface Element Integration Equation also the integral is calculated numarically 
+	double SEIntegralSumEq(double lowBound, double upBound, int n, double z, double zetasphere)//Surface Element Integration Equation also the integral is calculated numarically 
 	{
 		//z = 4.01;
 		n = 1000;
@@ -479,7 +468,7 @@ public:
 			double r = lowBound + i * dr;
 			double h1 = H - R * pow((1 - pow((r / R), 2)), 0.5);
 			double h2 = H + R * pow((1 - pow((r / R), 2)), 0.5);
-			double funcValue = EDL_S_FP(h1) - EDL_S_FP(h2);
+			double funcValue = EDL_S_FP(h1, zetasphere) - EDL_S_FP(h2, zetasphere);
 			double rectangleArea = funcValue * r*dr;
 			cumSum += rectangleArea;
 
@@ -626,7 +615,7 @@ int main() {
 				if (A <= B) {
 					//G += EvdwSS(A) + ESt_SR_SR(A) + ESt_SR_ER(A) + ESt_ER_ER(A);
 					//G[i][1] += EvdwSS(A) + ESt_SR_SR(A);								
-					G += mutual_interactions.EvdwSS(A) + mutual_interactions.ESt_SR_SR(A);
+					G += mutual_interactions.EvdwSS(A, Ps[k].Asphere, Ps[ke].Asphere) + mutual_interactions.ESt_SR_SR(A, Ps[k].zeta, Ps[ke].zeta);
 				}
 			}
 			A1 = calcDistance(Ps[k].x[0], (d_lx / 2.) - 0, Ps[k].y[0], (d_ly / 2.) - 0, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);//we consider all z values equal as we only care about 2D distance of particles from the center of the posts  
@@ -637,7 +626,7 @@ int main() {
 			A6 = calcDistance(Ps[k].x[0], 0, Ps[k].y[0], 0, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);
 
 			if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
-				G += mutual_interactions.EDL_S_FP_bevan(Zd);
+				G += mutual_interactions.EDL_S_FP_bevan(Zd, Ps[k].zeta);
 			}
 
 			Ps[k].E[0] = Upfde(Ed, Ps[k].CMf) + G;
@@ -743,7 +732,7 @@ int main() {
 								if (A <= B) {
 									//G += EvdwSS(A) + ESt_SR_SR(A) + ESt_SR_ER(A) + ESt_ER_ER(A);
 									//G[i][1] += EvdwSS(A) + ESt_SR_SR(A);								
-									G += mutual_interactions.ESt_SR_SR(A) + mutual_interactions.EvdwSS(A);
+									G += mutual_interactions.ESt_SR_SR(A, Ps[randi].zeta, Ps[ke].zeta) + mutual_interactions.EvdwSS(A, Ps[randi].Asphere, Ps[ke].Asphere);
 
 								}
 							}
@@ -758,7 +747,7 @@ int main() {
 						if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
 							//double Gu= mutual_interactions.SEIntegralSumEq(0, R, 500, Zd);
 							//double Guu = mutual_interactions.EDL_S_FP_bevan(Zd);
-							G += mutual_interactions.EDL_S_FP_bevan(Zd);
+							G += mutual_interactions.EDL_S_FP_bevan(Zd, Ps[randi].zeta);
 						}
 
 						Ps[randi].E[1] = Upfde(Ed, Ps[randi].CMf) + G;

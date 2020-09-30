@@ -1,15 +1,11 @@
-﻿  Source.cpp
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(321): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(347): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(350): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(353): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(310): warning C4101: 'kmin': unreferenced local variable
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(310): warning C4101: 'kmax': unreferenced local variable
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(514): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(560): warning C4244: 'initializing': conversion from 'double' to 'const int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(605): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(725): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(789): warning C4805: '==': unsafe mix of type 'double' and type 'bool' in operation
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(811): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\source.cpp(117): warning C4715: 'calcDistance': not all control paths return a value
+﻿  Feild_Energy_Particle.cpp
+  main.cpp
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(78): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(130): warning C4244: 'initializing': conversion from 'double' to 'const int', possible loss of data
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(175): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(295): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(359): warning C4805: '==': unsafe mix of type 'double' and type 'bool' in operation
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(381): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+  mutual_interactions.cpp
+  Generating Code...
   Project3.vcxproj -> C:\Users\ozj1_admin\source\repos\github_Albanie for comsol xy slice data\Dielectrophoresis_DEP_Simulation_new\Dielectrophoresis_DEP_Simulation_new\Debug\Project3.exe

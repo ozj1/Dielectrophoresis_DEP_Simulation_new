@@ -1,12 +1,14 @@
 #pragma once
 #include <string> 
 using namespace std;
+#include "Initialization.h"
 
 class Particle
 {
-
 public:
-	double eps0 = 8.854187817e-12, em = 78.5 * eps0;
+	Initialization init;
+
+	double eps0 = init.eps0, em = init.em;
 	double x[2];
 	double y[2];
 	double z[2];

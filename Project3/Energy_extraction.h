@@ -1,13 +1,15 @@
 #pragma once
 #include<vector> 
 #include "MC_funcs.h"
+#include "Initialization.h"
 
 class Energy_extraction
 {
 public:
-	double number_of_slides_in_comsol_output = 30;
-	double Diameter_post = 20., post_distance = 30.; //diameter of each post, tilted distance between posts  
-	double dist_posts_offset = 0, X_cyl1_offset = 18, Y_cyl1_offset = 18;
+	Initialization init;
+	double number_of_slides_in_comsol_output = init.number_of_slides_in_comsol_output;
+	double Diameter_post = init.Diameter_post, post_distance = init.post_distance; //diameter of each post, tilted distance between posts  
+	double dist_posts_offset = init.dist_posts_offset, X_cyl1_offset = init.X_cyl1_offset, Y_cyl1_offset = init.Y_cyl1_offset;
 	struct xy
 	{
 		double x;

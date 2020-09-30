@@ -1,14 +1,18 @@
 #pragma once
 #include <string> 
 #include<vector> 
+#include "Initialization.h"
+
 using namespace std;
 class mutual_interactions
 {
 public:
+	Initialization init;
+
 	#define pi  3.141592653589793
-	double eps0 = 8.854187817e-12, kT = 4.0453001636e-21, em = 78.5 * eps0, ep = 3.8 * eps0, Di = 1;//Di is in um unit here
-	double post_H = 4, pH = 9.43, R = Di * (1.0e-6) / 2., eps = 78.5, e0 = 1.60217657e-19, Na = 6.022e+23, zetasphere = -43.88, zetapost = -23.88;
-	double A1w2, Asio2 = 6.6e-20, Aw = 3.7e-20;
+	double eps0 = init.eps0, kT = init.kT, em = init.em, ep = init.ep, Di = init.Di;//Di is in um unit here
+	double post_H = init.post_H, pH = init.pH, R = init.R, eps = init.eps, e0 = init.e0, Na = init.Na, zetasphere = init.zetasphere, zetapost = init.zetapost;
+	double A1w2, Asio2 = init.Asio2, Aw = init.Aw;
 
 	double ys(double zeta);
 

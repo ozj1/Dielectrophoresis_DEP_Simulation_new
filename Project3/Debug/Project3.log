@@ -1,11 +1,8 @@
-﻿  Feild_Energy_Particle.cpp
-  main.cpp
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(78): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(130): warning C4244: 'initializing': conversion from 'double' to 'const int', possible loss of data
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(175): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(295): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(359): warning C4805: '==': unsafe mix of type 'double' and type 'bool' in operation
-c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(381): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-  mutual_interactions.cpp
-  Generating Code...
+﻿  main.cpp
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(82): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(135): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(180): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(300): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(364): warning C4805: '==': unsafe mix of type 'double' and type 'bool' in operation
+c:\users\ozj1_admin\source\repos\github_albanie for comsol xy slice data\dielectrophoresis_dep_simulation_new\dielectrophoresis_dep_simulation_new\project3\main.cpp(386): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
   Project3.vcxproj -> C:\Users\ozj1_admin\source\repos\github_Albanie for comsol xy slice data\Dielectrophoresis_DEP_Simulation_new\Dielectrophoresis_DEP_Simulation_new\Debug\Project3.exe

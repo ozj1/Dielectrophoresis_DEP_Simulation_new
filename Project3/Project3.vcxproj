@@ -129,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="Energy_extraction.cpp" />
     <ClCompile Include="Feild_Energy_Particle.cpp" />
+    <ClCompile Include="Initialization.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MC_funcs.cpp" />
     <ClCompile Include="mutual_interactions.cpp" />
@@ -137,6 +138,7 @@
   <ItemGroup>
     <ClInclude Include="Energy_extraction.h" />
     <ClInclude Include="Feild_Energy_Particle.h" />
+    <ClInclude Include="Initialization.h" />
     <ClInclude Include="MC_funcs.h" />
     <ClInclude Include="mutual_interactions.h" />
     <ClInclude Include="Particle.h" />

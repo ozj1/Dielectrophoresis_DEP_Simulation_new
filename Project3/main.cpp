@@ -30,18 +30,17 @@ using namespace std;
 Initialization init;
 	//intialization
 #define pi  3.141592653589793
-double eps0 = init.eps0, kT = init.kT, em = init.em, ep = init.ep, Di = init.Di;//Di is in um unit here
-double Vpp = init.Vpp, dg = init.dg; //for N,m,j,kg,s units, Ro density kg/m3, for N, m, j, kg, s, C units, eps0= 8.85e-12 C2/Nm2
-double CMfgeneral = init.CMfgeneral;//a single CMf value is needed for dep energy profile, for monte carlo calc we use the specific CMf of each particle   
+double eps0 = init.eps0, kT = init.kT, em = init.em, Di = init.Di;//Di is in um unit here
+//double Vpp = init.Vpp, dg = init.dg; //for N,m,j,kg,s units, Ro density kg/m3, for N, m, j, kg, s, C units, eps0= 8.85e-12 C2/Nm2
 double acceptedtrials = init.acceptedtrials, totaltrials = init.totaltrials, acceptancerate;
 int jmax = init.jmax;
 double rad, A, B, MetropolisMC, kBoltzmann = init.kBoltzmann, Temp = init.Temp;
 double Diameter_post = init.Diameter_post, post_distance = init.post_distance; //diameter of each post, tilted distance between posts  
-double dist_posts_offset = init.dist_posts_offset, X_cyl1_offset = init.X_cyl1_offset, Y_cyl1_offset = init.Y_cyl1_offset;
+double X_cyl1_offset = init.X_cyl1_offset, Y_cyl1_offset = init.Y_cyl1_offset;
 double number_of_slides_in_comsol_output = init.number_of_slides_in_comsol_output;
 
-double post_H = init.post_H, pH = init.pH, R = init.R, eps = init.eps, e0 = init.e0, Na = init.Na, zetasphere = init.zetasphere, zetapost = init.zetapost;
-double A1w2, Asio2 = init.Asio2, Aw = init.Aw;
+double post_H = init.post_H, pH = init.pH, R = init.R, eps = init.eps, e0 = init.e0, Na = init.Na, zetapost = init.zetapost;
+double A1w2, Aw = init.Aw;
 
 constexpr int Particle_num = init.Particle_num;
 double paticles_cut_off_distance = init.paticles_cut_off_distance;
@@ -54,7 +53,7 @@ double Zd_cross = init.Zd_cross;
 
 string type1 = init.type1, type2 = init.type2;//particle types
 constexpr double portion_of_the_first_particle_type = init.portion_of_the_first_particle_type;
-
+string SphSphElecCalType=init.SphSphElecCalType;//SphSphElecCalType Sphere Sphere Electrostatic Calclation Type bevan or NW_project?
 
 //const int numvalue = 565820;//as we know our data has this much row in it 565820
 
@@ -150,8 +149,9 @@ int main() {
 
 	int k = 0, ke = 0;
 	//double Px[Pnum][2], Py[Pnum][2], Pz[Pnum][2], PEnergy[Pnum][2], A, B, A1, A2, A3, A4, A5, A6;//Di is in 1um
-	double A, B, A1, A2, A3, A4, A5, A6;//Di is in 1um
-
+	double A, B, A1, A2, A3, A4, A5, A6, A7, A8;//Di is in 1um
+	bool inPost=false;// if inpost true then it means the particle in inside the post which shold not happen a the posts are solid, so we reduce i-- and try find a new random position for the particle
+	bool OnPost = false;//OnPost = true if the particle is on top of a post 
 	int OverlapChance, ff = 0;
 	double G;
 	if (plot_dep_enrgy == false) {
@@ -162,27 +162,33 @@ int main() {
 			//new debugged: based on exp(-kappa * (z - (Di / 2.))) z cannot be lower than radius of particle 'cause it will pass the beneath wall which is not real
 			Ps[i].z[0] = (double)MC_funcs.fRand(z0 + 0.0001, d_lz);
 
+			if (Ps[i].z[0] <= (post_H + Di / 2.)) {
+				inPost = MC_funcs.DistfromPosts(Ps[i].x[0], Ps[i].y[0], Ps[i].z[0], d_lx, d_ly, bb, Diameter);
+			}
+	        if (inPost==false) {
+				for (k = (i - 1); k >= 0; k--) {
 
+					int OverlapChance;
+					A = MC_funcs.calcDistance(Ps[i].x[0], Ps[k].x[0], Ps[i].y[0], Ps[k].y[0], Ps[i].z[0], Ps[k].z[0], d_lx, d_ly);
+					//B = 1.05*Di; we make it dimensionless
+					B = 1.05;
+					if (A > B) {
+						OverlapChance = false;
+					}
+					else {
+						OverlapChance = true;
+					}
 
-			for (k = (i - 1); k >= 0; k--) {
-
-				int OverlapChance;
-				A = MC_funcs.calcDistance(Ps[i].x[0], Ps[k].x[0], Ps[i].y[0], Ps[k].y[0], Ps[i].z[0], Ps[k].z[0], d_lx, d_ly);
-				//B = 1.05*Di; we make it dimensionless
-				B = 1.05;
-				if (A > B) {
-					OverlapChance = false;
-				}
-				else {
-					OverlapChance = true;
-				}
-
-				if (OverlapChance == true) {
-					i--;
-					break;
+					if (OverlapChance == true) {
+						i--;
+						break;
+					}
 				}
 			}
-
+			else if (inPost){
+				inPost = false;
+				i--;
+			}
 		}
 
 		for (k = 0; k < Pnum; k++) {
@@ -201,21 +207,31 @@ int main() {
 				if (A <= B) {
 					//G += EvdwSS(A) + ESt_SR_SR(A) + ESt_SR_ER(A) + ESt_ER_ER(A);
 					//G[i][1] += EvdwSS(A) + ESt_SR_SR(A);								
-					G += mutual_interactions.EvdwSS(A, Ps[k].Asphere, Ps[ke].Asphere) + mutual_interactions.ESt_SR_SR(A, Ps[k].zeta, Ps[ke].zeta);
+					//G += mutual_interactions.EvdwSS(A, Ps[k].Asphere, Ps[ke].Asphere) + mutual_interactions.ESt_SR_SR(A, Ps[k].zeta, Ps[ke].zeta);
+					//G = mutual_interactions.EvdwSS(A, Ps[k].Asphere, Ps[ke].Asphere);
+					//G =mutual_interactions.EDL_SR_SR_bevan(A, Ps[k].zeta, Ps[ke].zeta);
+					//G = mutual_interactions.ESt_SR_SR(A, Ps[k].zeta, Ps[ke].zeta);
+					if (SphSphElecCalType == "bevan") {
+						G += mutual_interactions.EvdwSS(A, Ps[k].Asphere, Ps[ke].Asphere) + mutual_interactions.EDL_SR_SR_bevan(A, Ps[k].zeta, Ps[ke].zeta);
+					}
+					else if (SphSphElecCalType == "NW_project") {
+						G += mutual_interactions.EvdwSS(A, Ps[k].Asphere, Ps[ke].Asphere) + mutual_interactions.ESt_SR_SR(A, Ps[k].zeta, Ps[ke].zeta);
+					}
 				}
 			}
-			A1 = MC_funcs.calcDistance(Ps[k].x[0], (d_lx / 2.) - 0, Ps[k].y[0], (d_ly / 2.) - 0, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);//we consider all z values equal as we only care about 2D distance of particles from the center of the posts  
-			A2 = MC_funcs.calcDistance(Ps[k].x[0], (d_lx / 2.) - bb, Ps[k].y[0], (d_ly / 2.) - bb, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);
-			A3 = MC_funcs.calcDistance(Ps[k].x[0], (d_lx / 2.) - bb, Ps[k].y[0], (d_ly / 2.) + bb, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);
-			A4 = MC_funcs.calcDistance(Ps[k].x[0], (d_lx / 2.) + bb, Ps[k].y[0], (d_ly / 2.) - bb, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);
-			A5 = MC_funcs.calcDistance(Ps[k].x[0], (d_lx / 2.) + bb, Ps[k].y[0], (d_ly / 2.) + bb, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);
-			A6 = MC_funcs.calcDistance(Ps[k].x[0], 0, Ps[k].y[0], 0, Ps[k].z[0], Ps[k].z[0], d_lx, d_ly);
-
-			if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
-				G += mutual_interactions.EDL_S_FP_bevan(Zd, Ps[k].zeta);
+			OnPost = MC_funcs.DistfromPosts(Ps[k].x[0], Ps[k].y[0], Ps[k].z[0], d_lx, d_ly, bb, Diameter);
+			if (OnPost) {
+				double mbmb= mutual_interactions.EDL_S_FP_bevan(Zd, Ps[k].zeta);
+				if (Ps[k].z[0] >= (post_H + Di / 2.)) {
+					G += mutual_interactions.EDL_S_FP_bevan(Zd, Ps[k].zeta);
+				}
 			}
-
-			Ps[k].E[0] = Feild_Energy_Particle.DEP(Ed, Ps[k].CMf) + G;
+			else if (OnPost == false) {
+				double mbmb = mutual_interactions.EDL_S_FP_bevan(Zd + post_H, Ps[k].zeta);
+				G += mutual_interactions.EDL_S_FP_bevan(Zd + post_H, Ps[k].zeta);
+			}
+			double mdmd = Feild_Energy_Particle.buoyant_force(Zd, Ps[k].density);
+			Ps[k].E[0] = Feild_Energy_Particle.DEP(Ed, Ps[k].CMf) + Feild_Energy_Particle.buoyant_force(Zd, Ps[k].density) + G;
 		}
 
 		int j = 0;
@@ -283,135 +299,153 @@ int main() {
 				Ps[randi].z[1] = Ps[randi].z[1] + (d_lz - z0);
 
 			}
-			o = 0;
-			for (i = 0; i < Pnum; i++) {
-				ff = 0;
-				if (i != randi) {
-					A = MC_funcs.calcDistance(Ps[randi].x[1], Ps[i].x[0], Ps[randi].y[1], Ps[i].y[0], Ps[randi].z[1], Ps[i].z[0], d_lx, d_ly);
-					//B = 1.05*Di; we make it dimensionless
-					B = 1.005;
-					if (A > B) {
-						OverlapChance = false;
-					}
-					else {
-						OverlapChance = true;
-					}
+			if (Ps[randi].z[1] <= (post_H + Di / 2.)) {
+				inPost = MC_funcs.DistfromPosts(Ps[randi].x[1], Ps[randi].y[1], Ps[randi].z[1], d_lx, d_ly, bb, Diameter);
+			}
+			if (inPost == false) {
+				o = 0;
+				for (i = 0; i < Pnum; i++) {
 
-					if (OverlapChance == true) {
-						j--;
-						ff = 0;
-						break;
-					}
-					o++;
+					ff = 0;
+					if (i != randi) {
+						A = MC_funcs.calcDistance(Ps[randi].x[1], Ps[i].x[0], Ps[randi].y[1], Ps[i].y[0], Ps[randi].z[1], Ps[i].z[0], d_lx, d_ly);
+						//B = 1.05*Di; we make it dimensionless
+						B = 1.005;
+						if (A > B) {
+							OverlapChance = false;
+						}
+						else {
+							OverlapChance = true;
+						}
 
-					if (o == (Pnum - 1)) {
-						G = (double)zero;
-						//Px[randi][1]= (d_lx / 1.)-3, Py[randi][1]= (d_ly / 1.)-3, Pz[randi][1]=4.01;
-						Xd = Ps[randi].x[1], Yd = Ps[randi].y[1], Zd = Ps[randi].z[1];
-						//now a loop to find PEnergy value by searching through the Edelta2 values 
-						Ed = energy_extraction.Energy_Value_Extaction(DataNum, DataSection, th, Xd, Yd, Zd, X, Y, Z, E, data_lx, data_ly, data_lz, d_lx);
-						for (ke = 0; ke < Pnum; ke++) {
-							if (ke != randi) {
-								A = MC_funcs.calcDistance(Ps[randi].x[1], Ps[ke].x[1], Ps[randi].y[1], Ps[ke].y[1], Ps[randi].z[1], Ps[ke].z[1], d_lx, d_ly);
-								B = paticles_cut_off_distance;
-								// new added: we need to add A > 340 because if there's a overlab the energy of system will increase to infinity						
-								if (A <= B) {
-									//G += EvdwSS(A) + ESt_SR_SR(A) + ESt_SR_ER(A) + ESt_ER_ER(A);
-									//G[i][1] += EvdwSS(A) + ESt_SR_SR(A);								
-									G += mutual_interactions.ESt_SR_SR(A, Ps[randi].zeta, Ps[ke].zeta) + mutual_interactions.EvdwSS(A, Ps[randi].Asphere, Ps[ke].Asphere);
+						if (OverlapChance == true) {
+							j--;
+							ff = 0;
+							break;
+						}
+						o++;
 
+						if (o == (Pnum - 1)) {
+							G = (double)zero;
+							//Px[randi][1]= (d_lx / 1.)-3, Py[randi][1]= (d_ly / 1.)-3, Pz[randi][1]=4.01;
+							Xd = Ps[randi].x[1], Yd = Ps[randi].y[1], Zd = Ps[randi].z[1];
+							//now a loop to find PEnergy value by searching through the Edelta2 values 
+							Ed = energy_extraction.Energy_Value_Extaction(DataNum, DataSection, th, Xd, Yd, Zd, X, Y, Z, E, data_lx, data_ly, data_lz, d_lx);
+							for (ke = 0; ke < Pnum; ke++) {
+								if (ke != randi) {
+									A = MC_funcs.calcDistance(Ps[randi].x[1], Ps[ke].x[1], Ps[randi].y[1], Ps[ke].y[1], Ps[randi].z[1], Ps[ke].z[1], d_lx, d_ly);
+									B = paticles_cut_off_distance;
+									// new added: we need to add A > 340 because if there's a overlab the energy of system will increase to infinity						
+									if (A <= B) {
+										//G += EvdwSS(A) + ESt_SR_SR(A) + ESt_SR_ER(A) + ESt_ER_ER(A);
+										//G[i][1] += EvdwSS(A) + ESt_SR_SR(A);								
+										//G += mutual_interactions.ESt_SR_SR(A, Ps[randi].zeta, Ps[ke].zeta) + mutual_interactions.EvdwSS(A, Ps[randi].Asphere, Ps[ke].Asphere);
+										if (SphSphElecCalType == "bevan") {
+											G += mutual_interactions.EDL_SR_SR_bevan(A, Ps[randi].zeta, Ps[ke].zeta) + mutual_interactions.EvdwSS(A, Ps[randi].Asphere, Ps[ke].Asphere);
+										}
+										else if (SphSphElecCalType == "NW_project") {
+											G += mutual_interactions.ESt_SR_SR(A, Ps[randi].zeta, Ps[ke].zeta) + mutual_interactions.EvdwSS(A, Ps[randi].Asphere, Ps[ke].Asphere);
+										}
+
+									}
 								}
 							}
-						}
-						A1 = MC_funcs.calcDistance(Ps[randi].x[1], (d_lx / 2.) - 0, Ps[randi].y[1], (d_ly / 2.) - 0, Ps[randi].z[1], Ps[randi].z[1], d_lx, d_ly);
-						A2 = MC_funcs.calcDistance(Ps[randi].x[1], (d_lx / 2.) - bb, Ps[randi].y[1], (d_ly / 2.) - bb, Ps[randi].z[1], Ps[randi].z[1], d_lx, d_ly);
-						A3 = MC_funcs.calcDistance(Ps[randi].x[1], (d_lx / 2.) - bb, Ps[randi].y[1], (d_ly / 2.) + bb, Ps[randi].z[1], Ps[randi].z[1], d_lx, d_ly);
-						A4 = MC_funcs.calcDistance(Ps[randi].x[1], (d_lx / 2.) + bb, Ps[randi].y[1], (d_ly / 2.) - bb, Ps[randi].z[1], Ps[randi].z[1], d_lx, d_ly);
-						A5 = MC_funcs.calcDistance(Ps[randi].x[1], (d_lx / 2.) + bb, Ps[randi].y[1], (d_ly / 2.) + bb, Ps[randi].z[1], Ps[randi].z[1], d_lx, d_ly);
-						A6 = MC_funcs.calcDistance(Ps[randi].x[1], 0, Ps[randi].y[1], 0, Ps[randi].z[1], Ps[randi].z[1], d_lx, d_ly);
+							OnPost = MC_funcs.DistfromPosts(Ps[randi].x[1], Ps[randi].y[1], Ps[randi].z[1], d_lx, d_ly, bb, Diameter);
+							if (OnPost) {
+								//double Gu= mutual_interactions.SEIntegralSumEq(0, R, 500, Zd);
+								//double Guu = mutual_interactions.EDL_S_FP_bevan(Zd);
+								if (Ps[randi].z[1] >= (post_H + Di / 2.)) {
 
-						if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.)) {
-							//double Gu= mutual_interactions.SEIntegralSumEq(0, R, 500, Zd);
-							//double Guu = mutual_interactions.EDL_S_FP_bevan(Zd);
-							G += mutual_interactions.EDL_S_FP_bevan(Zd, Ps[randi].zeta);
-						}
+									G += mutual_interactions.EDL_S_FP_bevan(Zd, Ps[randi].zeta);
+								}
+							}
+							else if (OnPost == false) {
+								G += mutual_interactions.EDL_S_FP_bevan(Zd+ post_H, Ps[randi].zeta);
+							}
 
-						Ps[randi].E[1] = Feild_Energy_Particle.DEP(Ed, Ps[randi].CMf) + G;
+							Ps[randi].E[1] = Feild_Energy_Particle.DEP(Ed, Ps[randi].CMf)+ Feild_Energy_Particle.buoyant_force(Zd, Ps[randi].density) + G;
 
-						if (Ps[randi].E[0] >= Ps[randi].E[1]) {
-							// false == 0 and true = !false
-							MetropolisMC = true;
-						}
-
-						else {
-							double P = exp(-(Ps[randi].E[1] - Ps[randi].E[0]) / (kBoltzmann*Temp));
-							//double P = exp(-(TotalEnergy[1] - TotalEnergy[0]) / (kBoltzmann*Temp));
-							rad = (double)MC_funcs.fRand(0., 1.);
-							//Yes, the random number r should be less than or equal to p = exp(-Delta E/kT). This is right.
-							if (P >= rad) {
+							if (Ps[randi].E[0] >= Ps[randi].E[1]) {
+								// false == 0 and true = !false
 								MetropolisMC = true;
 							}
+
 							else {
-
-								MetropolisMC = false;
-							}
-
-						}
-
-
-						//checking having overlap with all previous made rectangles
-
-						if (MetropolisMC == true)
-						{
-							acceptedtrials++;
-
-							//if (Px[randi][0] == Px[randi][1] && Py[randi][0] == Py[randi][1] && Pz[randi][0] == Pz[randi][1] && radnum < (2. / 3)) {
-
-							//	cout << "";
-							//}
-
-							Ps[randi].x[0] = Ps[randi].x[1];
-							Ps[randi].y[0] = Ps[randi].y[1];
-							Ps[randi].z[0] = Ps[randi].z[1];
-							Ps[randi].E[0] = Ps[randi].E[1];
-
-
-
-
-							//cout the new positions
-							acceptancerate = acceptedtrials / totaltrials;
-							//cout << "\n\n " << "acceptance rate: " << acceptancerate << "\n\n";
-							int pr;
-							//to get monte carlo steps per each sphere
-							pr = fmod(j, (1));
-							if (pr == 0) {
-								cout << "j=" << j << "\n\n";
-								for (i = 0; i < Pnum; i++) {
-									//each particle has a specific color 
-									cout << "{RGBColor" << Ps[i].color << ", Opacity[0.8], Sphere[{" << Ps[i].x[0] << ", " << Ps[i].y[0] << ", " << Ps[i].z[0] << "}, " << (Di / 2.) << "]},";
+								double P = exp(-(Ps[randi].E[1] - Ps[randi].E[0]) / (kBoltzmann*Temp));
+								//double P = exp(-(TotalEnergy[1] - TotalEnergy[0]) / (kBoltzmann*Temp));
+								rad = (double)MC_funcs.fRand(0., 1.);
+								//Yes, the random number r should be less than or equal to p = exp(-Delta E/kT). This is right.
+								if (P >= rad) {
+									MetropolisMC = true;
 								}
+								else {
+
+									MetropolisMC = false;
+								}
+
 							}
-							//if (pr == 0) {
-							//	gh++;
-							//	cout << (Pnum) << "\n " << gh << "\n";
-							//	for (i = 0; i < Pnum; i++) {
 
-							//		cout << " P" << (i+1) << " " << Px[i][0] << "    " << Py[i][0] << "    " << Pz[i][0] << "\n";
 
-							//	}
+							//checking having overlap with all previous made rectangles
 
-							//}
-						}
-						else {
-							j--;
+							if (MetropolisMC == true)
+							{
+								acceptedtrials++;
+
+								//if (Px[randi][0] == Px[randi][1] && Py[randi][0] == Py[randi][1] && Pz[randi][0] == Pz[randi][1] && radnum < (2. / 3)) {
+
+								//	cout << "";
+								//}
+
+								Ps[randi].x[0] = Ps[randi].x[1];
+								Ps[randi].y[0] = Ps[randi].y[1];
+								Ps[randi].z[0] = Ps[randi].z[1];
+								Ps[randi].E[0] = Ps[randi].E[1];
+
+
+
+
+								//cout the new positions
+								acceptancerate = acceptedtrials / totaltrials;
+								//cout << "\n\n " << "acceptance rate: " << acceptancerate << "\n\n";
+								int pr;
+								//to get monte carlo steps per each sphere
+								pr = fmod(j, (Pnum));
+								if (pr == 0) {
+									cout << "j=" << j << "\n\n";
+									for (i = 0; i < Pnum; i++) {
+										//each particle has a specific color 
+										cout << "{RGBColor" << Ps[i].color << ", Opacity[0.8], Sphere[{" << Ps[i].x[0] << ", " << Ps[i].y[0] << ", " << Ps[i].z[0] << "}, " << (Di / 2.) << "]},";
+									}
+								}
+								//if (pr == 0) {
+								//	gh++;
+								//	cout << (Pnum) << "\n " << gh << "\n";
+								//	for (i = 0; i < Pnum; i++) {
+
+								//		cout << " P" << (i+1) << " " << Px[i][0] << "    " << Py[i][0] << "    " << Pz[i][0] << "\n";
+
+								//	}
+
+								//}
+							}
+							else {
+								j--;
+							}
 						}
 					}
-				}
+				}//here
+			}
+			else if (inPost) {
+			inPost = false;
+			j--;
 			}
 
 		}
 	}
 	if (plot_dep_enrgy == true) {
+		double CMfgeneral = Ps[0].CMf;//a single CMf value is needed for dep energy profile, for monte carlo calc we use the specific CMf of each particle   
+		//Ps[0].CMf i th CMf of particle type 1 whatever it is sio2, pmma or tio2
 		//this part is just for plotting dep energy
 		int j = 0;
 		//out.open(generatefilename("Xvalues"));
@@ -455,7 +489,7 @@ int main() {
 				for (j = 0; (j*deltay) <= d_ly; j++) {
 					Xd = i * deltax, Yd = j * deltay;
 					Ed = energy_extraction.Energy_Value_Extaction(DataNum, DataSection, th, Xd, Yd, Zd, X, Y, Z, E, data_lx, data_ly, data_lz, d_lx);
-					cout << Feild_Energy_Particle.DEP(Ed, CMfgeneral) << "\n"; ;
+					cout << Feild_Energy_Particle.DEP(Ed, CMfgeneral) << "\n";
 				}
 			}
 		}

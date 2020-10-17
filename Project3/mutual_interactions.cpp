@@ -30,6 +30,14 @@ double mutual_interactions::ESt_SR_SR(double r, double zeta1, double zeta2) {//z
 	r = r * 1.0e-6;
 	return eps * eps0*pow((kT / e0), 2.)* yy(r, zeta1)*yy(r, zeta2)*(pow(R, 2.) / r)*log(1 + exp(-kappa(pH) * (r - 2.*R)));//modified eq for wo sphrs with differnt zeta potntial (particle spheres and post spheres) 
 }
+double mutual_interactions::EDL_SR_SR_bevan(double r, double zeta1, double zeta2) {//Electric double layer between Sphere and Flat Plate Equation
+	//for now we consider the post zeta as -23.88
+	r = r * 1.0e-6;
+	double sai1 = tanh(ys(zeta1) / 4.);
+	double sai2 = tanh(ys(zeta2) / 4.);
+	return 32 * pi *R* eps*eps0*sai1*sai2*pow((kT / e0), 2.)*exp(-kappa(pH) * (r - 2.*R));//eq from SEI paper: Bhattacharjee, Elimelech
+	//return r;
+}
 double mutual_interactions::Hr(double x, double y) {
 
 	return y / (pow(x, 2.) + x * y + x) + y / (pow(x, 2.) + x * y + x + y) + 2.*log((pow(x, 2.) + x * y + x) / (pow(x, 2.) + x * y + x + y));

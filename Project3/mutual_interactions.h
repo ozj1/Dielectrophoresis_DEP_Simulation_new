@@ -10,9 +10,9 @@ public:
 	Initialization init;
 
 	#define pi  3.141592653589793
-	double eps0 = init.eps0, kT = init.kT, em = init.em, ep = init.ep, Di = init.Di;//Di is in um unit here
-	double post_H = init.post_H, pH = init.pH, R = init.R, eps = init.eps, e0 = init.e0, Na = init.Na, zetasphere = init.zetasphere, zetapost = init.zetapost;
-	double A1w2, Asio2 = init.Asio2, Aw = init.Aw;
+	double eps0 = init.eps0, kT = init.kT, em = init.em, Di = init.Di;//Di is in um unit here
+	double post_H = init.post_H, pH = init.pH, R = init.R, eps = init.eps, e0 = init.e0, Na = init.Na, zetapost = init.zetapost;
+	double A1w2, Aw = init.Aw;
 
 	double ys(double zeta);
 
@@ -23,6 +23,7 @@ public:
 	//electroestatic between sphere sphere from NW assembly paper
 	//double ESt_SR_SR(double r, double zeta1, double zeta2)
 	double ESt_SR_SR(double r, double zeta1, double zeta2); //zeta1 is the zeta of particle 1
+	double EDL_SR_SR_bevan(double r, double zeta1, double zeta2); //Electric double layer between Sphere and Flat Plate Equation
 
 	double Hr(double x, double y); 
 

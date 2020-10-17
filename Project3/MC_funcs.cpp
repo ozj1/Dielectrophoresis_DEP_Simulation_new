@@ -76,4 +76,20 @@ double MC_funcs::calcDistance(double x1, double x2, double y1, double y2, double
 	}
 }
 
+bool MC_funcs::DistfromPosts(double x, double y, double z, double d_lx, double d_ly, double bb, double Diameter) {
+		A1 = MC_funcs::calcDistance(x, (d_lx / 2.) - 0, y, (d_ly / 2.) - 0, z, z, d_lx, d_ly);//we consider all z values equal as we only care about 2D distance of particles from the center of the posts  
+		A2 = MC_funcs::calcDistance(x, (d_lx / 2.) - bb, y, (d_ly / 2.) - bb, z, z, d_lx, d_ly);
+		A3 = MC_funcs::calcDistance(x, (d_lx / 2.) - bb, y, (d_ly / 2.) + bb, z, z, d_lx, d_ly);
+		A4 = MC_funcs::calcDistance(x, (d_lx / 2.) + bb, y, (d_ly / 2.) - bb, z, z, d_lx, d_ly);
+		A5 = MC_funcs::calcDistance(x, (d_lx / 2.) + bb, y, (d_ly / 2.) + bb, z, z, d_lx, d_ly);
+		A6 = MC_funcs::calcDistance(x, 0, y, 0, z, z, d_lx, d_ly);
+		A7 = MC_funcs::calcDistance(x, (d_lx / 2.) - 0, y, d_ly, z, z, d_lx, d_ly);
+		A8 = MC_funcs::calcDistance(x, d_lx, y, (d_ly / 2.) - 0, z, z, d_lx, d_ly);
+
+		if ((A1 <= Diameter / 2.) || (A2 <= Diameter / 2.) || (A3 <= Diameter / 2.) || (A4 <= Diameter / 2.) || (A5 <= Diameter / 2.) || (A6 <= Diameter / 2.) || (A7 <= Diameter / 2.) || (A8 <= Diameter / 2.)) {
+			return true;
+		}
+		else{ return false; }
+}
+
 

@@ -20,7 +20,7 @@ Energy_extraction::xy Energy_extraction::coordinate_transform(double Wcell_input
 
 	double Di_p = Diameter_post, d = post_distance; //diameter of each post, tilted distance between posts  
 	//vrtical or horizental distance between two posts
-	double dist_posts = dist_posts_offset + (Di_p + d) / pow(2, 0.5);
+	double dist_posts = (Di_p + d) / pow(2, 0.5);
 	//X_cyl1 is th x coordinate of the bottom and left post in the raw data, same for Y_cyl1
 	double X_cyl1 = X_cyl1_offset + Wcell_input / 2. - dist_posts, Y_cyl1 = Y_cyl1_offset + Wcell_input / 2. - dist_posts;
 

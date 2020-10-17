@@ -9,7 +9,7 @@ public:
 	Initialization init;
 	double number_of_slides_in_comsol_output = init.number_of_slides_in_comsol_output;
 	double Diameter_post = init.Diameter_post, post_distance = init.post_distance; //diameter of each post, tilted distance between posts  
-	double dist_posts_offset = init.dist_posts_offset, X_cyl1_offset = init.X_cyl1_offset, Y_cyl1_offset = init.Y_cyl1_offset;
+	double X_cyl1_offset = init.X_cyl1_offset, Y_cyl1_offset = init.Y_cyl1_offset;
 	struct xy
 	{
 		double x;
